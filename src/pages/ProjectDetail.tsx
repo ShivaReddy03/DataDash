@@ -149,7 +149,7 @@ const ProjectDetail: React.FC = () => {
                 <CardTitle>Quick Info</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {Object.entries(project.quick_info).map(([key, value]) => (
+                {Object.entries(project.quick_info ?? {}).map(([key, value]) => (
                   <div key={key} className="flex justify-between">
                     <span className="text-muted-foreground">{key}</span>
                     <span className="font-medium">{String(value)}</span>
@@ -166,7 +166,7 @@ const ProjectDetail: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {Object.entries(project.amenities).map(([key, value]) => (
+                {Object.entries(project.amenities ?? {}).map(([key, value]) => (
                   <div key={key} className="flex items-center space-x-2">
                     <div className={`w-2 h-2 rounded-full ${value ? 'bg-success' : 'bg-muted'}`} />
                     <span className={value ? 'text-foreground' : 'text-muted-foreground'}>
@@ -236,7 +236,7 @@ const ProjectDetail: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(project.pricing_details).map(([key, value]) => (
+                {Object.entries(project.pricing_details ?? {}).map(([key, value]) => (
                   <Card key={key}>
                     <CardContent className="p-4">
                       <h4 className="font-medium mb-2">{key}</h4>

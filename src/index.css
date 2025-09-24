@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Professional Project Management Design System */
+
+@layer base {
+  :root {
+    /* Core background and text */
+    --background: 0 0% 99%;
+    --foreground: 224 16% 15%;
+
+    /* Card system */
+    --card: 0 0% 100%;
+    --card-foreground: 224 16% 15%;
+
+    /* Popover system */
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 16% 15%;
+
+    /* Modern professional blue */
+    --primary: 217 91% 50%;
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 217 91% 45%;
+    --primary-light: 217 91% 55%;
+    --primary-dark: 217 91% 40%;
+
+    /* Elegant secondary */
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 224 16% 15%;
+
+    /* Muted backgrounds */
+    --muted: 210 20% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Professional accent */
+    --accent: 210 20% 94%;
+    --accent-foreground: 224 16% 15%;
+
+    /* Enhanced status colors */
+    --success: 142 76% 42%;
+    --success-foreground: 0 0% 98%;
+    --success-light: 142 76% 55%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 98%;
+    --warning-light: 38 92% 65%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 98%;
+    --destructive-light: 0 84% 75%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 98%;
+    --info-light: 199 89% 60%;
+
+    /* Borders and inputs */
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 217 91% 47%;
+
+    /* Layout */
+    --radius: 8px;
+
+    /* Enhanced gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 50%), hsl(217 91% 55%));
+    --gradient-secondary: linear-gradient(135deg, hsl(210 20% 96%), hsl(210 20% 94%));
+    --gradient-hero: linear-gradient(135deg, hsl(217 91% 50%), hsl(234 89% 54%));
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 42%), hsl(142 76% 50%));
+    --gradient-warning: linear-gradient(135deg, hsl(38 92% 55%), hsl(38 92% 65%));
+    --gradient-info: linear-gradient(135deg, hsl(199 89% 48%), hsl(199 89% 58%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(210 20% 98%));
+
+    /* Enhanced shadows */
+    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 4px 12px 0 hsl(0 0% 0% / 0.12);
+    --shadow-lg: 0 10px 30px 0 hsl(0 0% 0% / 0.15);
+    --shadow-xl: 0 20px 50px 0 hsl(0 0% 0% / 0.2);
+    --shadow-colored: 0 8px 25px 0 hsl(217 91% 50% / 0.15);
+    --shadow-hover: 0 8px 25px 0 hsl(0 0% 0% / 0.15);
+
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 224 16% 15%;
+    --sidebar-primary: 217 91% 47%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 210 20% 94%;
+    --sidebar-accent-foreground: 224 16% 15%;
+    --sidebar-border: 214 20% 88%;
+    --sidebar-ring: 217 91% 47%;
+  }
+
+  .dark {
+    --background: 224 16% 5%;
+    --foreground: 0 0% 98%;
+
+    --card: 224 16% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 224 16% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 217 91% 55%;
+    --primary-foreground: 224 16% 5%;
+
+    --secondary: 224 16% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 224 16% 12%;
+    --muted-foreground: 220 9% 65%;
+
+    --accent: 224 16% 15%;
+    --accent-foreground: 0 0% 98%;
+
+    --success: 142 76% 45%;
+    --success-foreground: 224 16% 5%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 224 16% 5%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 224 16% 20%;
+    --input: 224 16% 20%;
+    --ring: 217 91% 55%;
+
+    --sidebar-background: 224 16% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 217 91% 55%;
+    --sidebar-primary-foreground: 224 16% 5%;
+    --sidebar-accent: 224 16% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 224 16% 20%;
+    --sidebar-ring: 217 91% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Enhanced utility classes */
+@layer utilities {
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .gradient-success {
+    background: var(--gradient-success);
+  }
+  
+  .gradient-warning {
+    background: var(--gradient-warning);
+  }
+  
+  .gradient-info {
+    background: var(--gradient-info);
+  }
+  
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+  
+  .shadow-elegant {
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .shadow-colored {
+    box-shadow: var(--shadow-colored);
+  }
+  
+  .shadow-hover {
+    box-shadow: var(--shadow-hover);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .text-success-light {
+    color: hsl(var(--success-light));
+  }
+  
+  .text-warning-light {
+    color: hsl(var(--warning-light));
+  }
+  
+  .text-info {
+    color: hsl(var(--info));
+  }
+  
+  .text-info-light {
+    color: hsl(var(--info-light));
+  }
+  
+  .bg-success-light {
+    background-color: hsl(var(--success-light));
+  }
+  
+  .bg-warning-light {
+    background-color: hsl(var(--warning-light));
+  }
+  
+  .bg-info {
+    background-color: hsl(var(--info));
+  }
+  
+  .bg-info-light {
+    background-color: hsl(var(--info-light));
+  }
+}

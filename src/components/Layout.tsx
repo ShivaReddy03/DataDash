@@ -9,7 +9,9 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X 
+  X,
+  Users,
+  TrendingUp
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -27,6 +29,8 @@ const Layout: React.FC = () => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Add Project', href: '/projects/add', icon: Plus },
+    { name: 'User Management', href: '/user-management', icon: Users },
+    { name: 'Schemes', href: '/schemes', icon: TrendingUp },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -46,7 +50,7 @@ const Layout: React.FC = () => {
           {sidebarOpen && (
             <div className="flex items-center space-x-2">
               <Building2 className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold text-primary">ProjectHub</span>
+              <span className="text-xl font-bold text-primary">DataDash</span>
             </div>
           )}
           <Button
@@ -123,6 +127,8 @@ const Layout: React.FC = () => {
               {location.pathname === '/projects/add' && 'Add New Project'}
               {location.pathname.startsWith('/projects/') && location.pathname.includes('/edit') && 'Edit Project'}
               {location.pathname.startsWith('/projects/') && !location.pathname.includes('/edit') && !location.pathname.includes('/add') && 'Project Details'}
+              {location.pathname === '/user-management' && 'User Management'}
+              {location.pathname === '/schemes' && 'Investment Schemes'}
               {location.pathname === '/settings' && 'Settings'}
             </h1>
             <div className="text-sm text-muted-foreground">

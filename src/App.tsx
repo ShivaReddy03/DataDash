@@ -11,6 +11,8 @@ import Dashboard from "@/pages/Dashboard";
 import AddProject from "@/pages/AddProject";
 import EditProject from "@/pages/EditProject";
 import ProjectDetail from "@/pages/ProjectDetail";
+import UserManagement from "@/pages/UserManagement";
+import Schemes from "@/pages/Schemes";
 import Settings from "@/pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -59,6 +61,8 @@ const AppContent = () => (
         <Route path="projects/add" element={<AddProject />} />
         <Route path="projects/:id" element={<ProjectDetail />} />
         <Route path="projects/:id/edit" element={<EditProject />} />
+        <Route path="user-management" element={<UserManagement />} />
+        <Route path="schemes" element={<Schemes />} />
         <Route path="settings" element={<Settings />} />
       </Route>
 

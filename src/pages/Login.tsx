@@ -41,7 +41,7 @@ const Login: React.FC = () => {
               <Building2 className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">ProjectHub</h1>
+          <h1 className="text-3xl font-bold text-foreground">DataDash</h1>
           <p className="text-muted-foreground">Project & Investment Management</p>
         </div>
 
@@ -67,7 +67,7 @@ const Login: React.FC = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@example.com"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -79,7 +79,7 @@ const Login: React.FC = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -95,11 +95,6 @@ const Login: React.FC = () => {
               </Button>
             </form>
 
-            <div className="mt-6 p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground mb-2">Demo Credentials:</p>
-              <p className="text-sm font-mono">Email: admin@example.com</p>
-              <p className="text-sm font-mono">Password: password</p>
-            </div>
           </CardContent>
         </Card>
       </div>

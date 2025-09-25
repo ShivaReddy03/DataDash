@@ -58,13 +58,13 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Projects</p>
-                <p className="text-2xl font-bold">{totalProjects}</p>
+                <p className="text-2xl font-bold">15</p>
               </div>
               <Building2 className="h-8 w-8 text-primary" />
             </div>
@@ -75,22 +75,10 @@ const Dashboard: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold">{formatCurrency(totalValue)}</p>
+                <p className="text-sm text-muted-foreground">Total Users</p>
+                <p className="text-2xl font-bold">50</p>
               </div>
-              <DollarSign className="h-8 w-8 text-success" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Units</p>
-                <p className="text-2xl font-bold">{totalUnits}</p>
-              </div>
-              <Users className="h-8 w-8 text-warning" />
+              <Users className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -100,7 +88,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Investment Schemes</p>
-                <p className="text-2xl font-bold">{totalSchemes}</p>
+                <p className="text-2xl font-bold">8</p>
               </div>
               <TrendingUp className="h-8 w-8 text-accent-foreground" />
             </div>
@@ -134,7 +122,7 @@ const Dashboard: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <Card key={project.id} className="gradient-card hover:shadow-hover transition-all duration-300 border-0">
+              <Card key={project.id} className="border border-border shadow-md hover:shadow-lg hover:border-primary transition-all duration-300">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1 flex-1">

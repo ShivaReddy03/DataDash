@@ -50,7 +50,7 @@ const Layout: React.FC = () => {
           {sidebarOpen && (
             <div className="flex items-center space-x-2">
               <Building2 className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold text-primary">DataDash</span>
+              <span className="text-xl font-bold text-primary">Kapil Properties</span>
             </div>
           )}
           <Button

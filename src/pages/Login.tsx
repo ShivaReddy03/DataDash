@@ -41,7 +41,7 @@ const Login: React.FC = () => {
               <Building2 className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">DataDash</h1>
+          <h1 className="text-3xl font-bold text-foreground">Kapil Properties</h1>
           <p className="text-muted-foreground">Project & Investment Management</p>
         </div>
 

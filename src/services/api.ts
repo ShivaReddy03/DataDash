@@ -13,24 +13,50 @@ import type {
 
 const API_BASE_URL = 'http://localhost:8000';
 
+// Fix: Define proper response interfaces
+interface PaginatedResponse<T> {
+  success: boolean;
+  message: string;
+  projects: T[];
+  page: number;
+  limit: number;
+  total_pages: number;
+  total_projects?: number;
+  total_schemes?: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+
+interface SingleItemResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 class ApiService {
   private getAuthHeaders() {
     const token = localStorage.getItem("auth_token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    return token ? { 
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    } : {};
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
+      const errorMessage = errorData.detail || errorData.message || `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
     }
-    const data: ApiResponse<T> = await response.json();
-    if (!data.success) {
+
+    const data = await response.json();
+    
+    // Fix: Check if response has success: false
+    if (data.success === false) {
       throw new Error(data.message || "API request failed");
     }
-    return data.data;
+    
+    return data;
   }
 
   // Authentication
@@ -43,163 +69,134 @@ class ApiService {
     return this.handleResponse<LoginResponse>(response);
   }
 
-  async createAdmin(adminData: LoginRequest): Promise<Admin> {
+  async createAdmin(adminData: LoginRequest): Promise<SingleItemResponse<Admin>> {
     const response = await fetch(`${API_BASE_URL}/admin/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...this.getAuthHeaders(),
-      },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify(adminData),
     });
-    return this.handleResponse<Admin>(response);
+    return this.handleResponse<SingleItemResponse<Admin>>(response);
   }
 
-  async getProfile(): Promise<Admin> {
-    const token = localStorage.getItem("auth_token");
-    if (!token) throw new Error("No token available");
-
+  async getProfile(): Promise<SingleItemResponse<Admin>> {
     const response = await fetch(`${API_BASE_URL}/admin/profile/me`, {
       headers: this.getAuthHeaders(),
     });
-    return this.handleResponse<Admin>(response);
+    return this.handleResponse<SingleItemResponse<Admin>>(response);
   }
 
-  // Projects
-  async getProjects(params: ProjectsQueryParams = {}): Promise<Project[]> {
-    const queryString = new URLSearchParams(
-      Object.entries(params).reduce((acc, [key, value]) => {
-        if (value !== undefined) acc[key] = value.toString();
-        return acc;
-      }, {} as Record<string, string>)
-    ).toString();
-
-    const url = `${API_BASE_URL}/projects/${
-      queryString ? `?${queryString}` : ""
-    }`;
-    const response = await fetch(url, {
-      headers: this.getAuthHeaders(), // 👈 added
+  // Projects - FIXED: Use proper paginated response type
+  async getProjects(params: ProjectsQueryParams = {}): Promise<PaginatedResponse<Project>> {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value.toString());
+      }
     });
-    return this.handleResponse<Project[]>(response);
-  }
-  async getProject(id: string): Promise<Project> {
-    const response = await fetch(`${API_BASE_URL}/projects/${id}`);
-    return this.handleResponse<Project>(response);
+
+    const url = `${API_BASE_URL}/projects/${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    const response = await fetch(url, {
+      headers: this.getAuthHeaders(),
+    });
+    
+    return this.handleResponse<PaginatedResponse<Project>>(response);
   }
 
-  async createProject(projectData: CreateProjectRequest): Promise<Project> {
+  async getProject(id: string): Promise<SingleItemResponse<Project>> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse<SingleItemResponse<Project>>(response);
+  }
+
+  async createProject(projectData: CreateProjectRequest): Promise<SingleItemResponse<Project>> {
     const response = await fetch(`${API_BASE_URL}/projects/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...this.getAuthHeaders(),
-      },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify(projectData),
     });
-    return this.handleResponse<Project>(response);
+    return this.handleResponse<SingleItemResponse<Project>>(response);
   }
 
-  async updateProject(
-    id: string,
-    updates: Partial<CreateProjectRequest>
-  ): Promise<Project> {
+  async updateProject(id: string, updates: Partial<CreateProjectRequest>): Promise<SingleItemResponse<Project>> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...this.getAuthHeaders(),
-      },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify(updates),
     });
-    return this.handleResponse<Project>(response);
+    return this.handleResponse<SingleItemResponse<Project>>(response);
   }
 
-  async searchProjects(
-    query: string,
-    params: ProjectsQueryParams = {}
-  ): Promise<Project[]> {
-    const queryString = new URLSearchParams(
-      Object.entries(params).reduce((acc, [key, value]) => {
-        if (value !== undefined) acc[key] = value.toString();
-        return acc;
-      }, {} as Record<string, string>)
-    ).toString();
+  // Fix: Search projects should also return paginated response
+  async searchProjects(query: string, params: ProjectsQueryParams = {}): Promise<PaginatedResponse<Project>> {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value.toString());
+      }
+    });
 
-    const url = `${API_BASE_URL}/projects/search/${encodeURIComponent(query)}${
-      queryString ? `?${queryString}` : ""
-    }`;
-    const response = await fetch(url);
-    return this.handleResponse<Project[]>(response);
+    const url = `${API_BASE_URL}/projects/search/${encodeURIComponent(query)}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    const response = await fetch(url, {
+      headers: this.getAuthHeaders(),
+    });
+    
+    return this.handleResponse<PaginatedResponse<Project>>(response);
   }
 
-  // Investment Schemes
-  async getSchemes(
-    params: SchemesQueryParams = {}
-  ): Promise<InvestmentScheme[]> {
-    const queryString = new URLSearchParams(
-      Object.entries(params).reduce((acc, [key, value]) => {
-        if (value !== undefined) acc[key] = value.toString();
-        return acc;
-      }, {} as Record<string, string>)
-    ).toString();
+  // Investment Schemes - FIXED: Handle different response structures
+  async getSchemes(params: SchemesQueryParams = {}): Promise<PaginatedResponse<InvestmentScheme>> {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value.toString());
+      }
+    });
 
-    const url = `${API_BASE_URL}/investment-schemes/${
-      queryString ? `?${queryString}` : ""
-    }`;
-    const response = await fetch(url);
-    return this.handleResponse<InvestmentScheme[]>(response);
+    const url = `${API_BASE_URL}/investment-schemes/${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    const response = await fetch(url, {
+      headers: this.getAuthHeaders(),
+    });
+    
+    return this.handleResponse<PaginatedResponse<InvestmentScheme>>(response);
   }
 
-  async getScheme(id: string): Promise<InvestmentScheme> {
-    const response = await fetch(`${API_BASE_URL}/investment-schemes/${id}`);
-    return this.handleResponse<InvestmentScheme>(response);
+  async getSchemesForProject(projectId: string, params: SchemesQueryParams = {}): Promise<PaginatedResponse<InvestmentScheme>> {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const url = `${API_BASE_URL}/investment-schemes/project/${projectId}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    const response = await fetch(url, {
+      headers: this.getAuthHeaders(),
+    });
+    
+    return this.handleResponse<PaginatedResponse<InvestmentScheme>>(response);
   }
 
-  async getSchemesForProject(
-    projectId: string,
-    params: SchemesQueryParams = {}
-  ): Promise<InvestmentScheme[]> {
-    const queryString = new URLSearchParams(
-      Object.entries(params).reduce((acc, [key, value]) => {
-        if (value !== undefined) acc[key] = value.toString();
-        return acc;
-      }, {} as Record<string, string>)
-    ).toString();
-
-    const url = `${API_BASE_URL}/investment-schemes/project/${projectId}${
-      queryString ? `?${queryString}` : ""
-    }`;
-    const response = await fetch(url);
-    return this.handleResponse<InvestmentScheme[]>(response);
-  }
-
-  async createScheme(
-    schemeData: CreateSchemeRequest
-  ): Promise<InvestmentScheme> {
+  async createScheme(schemeData: CreateSchemeRequest): Promise<SingleItemResponse<InvestmentScheme>> {
     const response = await fetch(`${API_BASE_URL}/investment-schemes/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...this.getAuthHeaders(),
-      },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify(schemeData),
     });
-    return this.handleResponse<InvestmentScheme>(response);
+    return this.handleResponse<SingleItemResponse<InvestmentScheme>>(response);
   }
 
-  async updateScheme(
-    id: string,
-    updates: Partial<CreateSchemeRequest>
-  ): Promise<InvestmentScheme> {
+  async updateScheme(id: string, updates: Partial<CreateSchemeRequest>): Promise<SingleItemResponse<InvestmentScheme>> {
     const response = await fetch(`${API_BASE_URL}/investment-schemes/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...this.getAuthHeaders(),
-      },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify(updates),
     });
-    return this.handleResponse<InvestmentScheme>(response);
+    return this.handleResponse<SingleItemResponse<InvestmentScheme>>(response);
   }
 }
 

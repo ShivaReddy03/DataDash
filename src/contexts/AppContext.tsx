@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
-import { useAuth } from "@/contexts/AuthContext";
 import type { Project, InvestmentScheme, AppContextType, CreateProjectRequest, CreateSchemeRequest } from '@/types';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -16,37 +15,14 @@ export const useApp = () => {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { isAuthenticated } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [schemes, setSchemes] = useState<InvestmentScheme[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      if (!isAuthenticated) return;
-
-      try {
-        setIsLoading(true);
-        const [projectsData, schemesData] = await Promise.all([
-          apiService.getProjects(),
-          apiService.getSchemes(),
-        ]);
-        setProjects(projectsData);
-        setSchemes(schemesData);
-      } catch (error) {
-        console.error("Failed to load initial data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadInitialData();
-  }, [isAuthenticated]);
-
   const addProject = async (projectData: CreateProjectRequest) => {
     try {
       const newProject = await apiService.createProject(projectData);
-      setProjects((prev) => [...prev, newProject]);
+      setProjects((prev) => [...prev, newProject.data]);
     } catch (error) {
       console.error("Failed to create project:", error);
       throw error;
@@ -60,7 +36,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const updatedProject = await apiService.updateProject(id, updates);
       setProjects((prev) =>
-        prev.map((project) => (project.id === id ? updatedProject : project))
+        prev.map((project) => (project.id === id ? updatedProject.data : project))
       );
     } catch (error) {
       console.error("Failed to update project:", error);
@@ -86,7 +62,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const addScheme = async (schemeData: CreateSchemeRequest) => {
     try {
       const newScheme = await apiService.createScheme(schemeData);
-      setSchemes((prev) => [...prev, newScheme]);
+      setSchemes((prev) => [...prev, newScheme.data]);
     } catch (error) {
       console.error("Failed to create scheme:", error);
       throw error;
@@ -100,7 +76,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const updatedScheme = await apiService.updateScheme(id, updates);
       setSchemes((prev) =>
-        prev.map((scheme) => (scheme.id === id ? updatedScheme : scheme))
+        prev.map((scheme) => (scheme.id === id ? updatedScheme.data : scheme))
       );
     } catch (error) {
       console.error("Failed to update scheme:", error);
@@ -125,7 +101,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const refreshProjects = async () => {
     try {
       const projectsData = await apiService.getProjects();
-      setProjects(projectsData);
+      setProjects(projectsData.projects);
     } catch (error) {
       console.error("Failed to refresh projects:", error);
       throw error;
@@ -135,7 +111,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const refreshSchemes = async () => {
     try {
       const schemesData = await apiService.getSchemes();
-      setSchemes(schemesData);
+      setSchemes(schemesData.projects);
     } catch (error) {
       console.error("Failed to refresh schemes:", error);
       throw error;

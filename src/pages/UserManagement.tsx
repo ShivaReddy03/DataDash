@@ -42,7 +42,7 @@ const UserManagement: React.FC = () => {
       const response = await apiService.getProfile();
       // For demo purposes, create mock users including current user
       const mockUsers = [
-        response,
+        response.data,
         { id: '2', email: 'john@example.com', created_at: '2024-01-15T10:30:00Z', updated_at: '2024-01-15T10:30:00Z' },
         { id: '3', email: 'sarah@example.com', created_at: '2024-02-20T14:15:00Z', updated_at: '2024-02-20T14:15:00Z' },
         { id: '4', email: 'mike@example.com', created_at: '2024-03-10T09:45:00Z', updated_at: '2024-03-10T09:45:00Z' },

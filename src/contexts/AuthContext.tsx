@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token) {
         try {
           const profile = await apiService.getProfile();
-          setUser(profile);
+          setUser(profile.data);
         } catch (error) {
           console.error('Failed to get profile:', error);
           localStorage.removeItem('auth_token');
@@ -42,19 +42,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  const login = async (credentials: LoginRequest) => {
-    const response = await apiService.login(credentials);
-    localStorage.setItem("auth_token", response.token);
-    setUser(response.admin);
+const login = async (credentials: LoginRequest) => {
+  const response = await apiService.login(credentials);
 
-    // preload profile to ensure state matches backend
-    try {
-      const profile = await apiService.getProfile();
-      setUser(profile);
-    } catch (err) {
-      console.error("Failed to fetch profile after login", err);
-    }
-  };
+  localStorage.setItem("auth_token", response.token);
+  setUser(response.admin);
+
+  try {
+    const profile = await apiService.getProfile();
+    setUser(profile.data);
+  } catch (err) {
+    console.error("Failed to fetch profile after login", err);
+  }
+};
 
   const logout = () => {
     localStorage.removeItem('auth_token');

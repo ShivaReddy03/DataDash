@@ -1,9 +1,25 @@
 // API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
 }
+
+export interface PaginatedApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T[];
+  page: number;
+  limit: number;
+  total_pages: number;
+  total_projects?: number;
+  total_schemes?: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+
+export type ProjectsResponse = PaginatedApiResponse<Project>;
+export type SchemesResponse = PaginatedApiResponse<InvestmentScheme>;
 
 // Authentication Types
 export interface LoginRequest {
@@ -91,6 +107,7 @@ export interface CreateProjectRequest {
   features: string[];
   investment_highlights: string[];
   amenities: Amenity[];
+  is_active?: boolean;
 }
 
 // Investment Scheme Types
@@ -132,7 +149,7 @@ export interface CreateSchemeRequest {
 // Query Parameters
 export interface ProjectsQueryParams {
   limit?: number;
-  offset?: number;
+  page?: number;
   property_type?: PropertyType;
   status_filter?: ProjectStatus;
   min_price?: number;
@@ -144,5 +161,5 @@ export interface SchemesQueryParams {
   scheme_type?: SchemeType;
   is_active?: boolean;
   limit?: number;
-  offset?: number;
+  page?: number;
 }

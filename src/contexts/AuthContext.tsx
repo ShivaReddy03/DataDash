@@ -43,13 +43,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (credentials: LoginRequest) => {
+    const response = await apiService.login(credentials);
+    localStorage.setItem("auth_token", response.token);
+    setUser(response.admin);
+
+    // preload profile to ensure state matches backend
     try {
-      const response = await apiService.login(credentials);
-      localStorage.setItem('auth_token', response.token);
-      setUser(response.admin);
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
+      const profile = await apiService.getProfile();
+      setUser(profile);
+    } catch (err) {
+      console.error("Failed to fetch profile after login", err);
     }
   };
 

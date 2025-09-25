@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +10,7 @@ import { Form } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Save, ArrowLeft } from 'lucide-react';
 import type { CreateProjectRequest } from '@/types';
+import { apiService } from "@/services/api";
 
 // Form components
 import { BasicInfoForm } from '@/components/forms/BasicInfoForm';
@@ -58,12 +58,33 @@ const projectSchema = z.object({
 const EditProject: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getProject, updateProject } = useApp();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
 
-  const project = getProject(id!);
+  const [project, setProject] = useState<any>(null);
+
+useEffect(() => {
+  const fetchProject = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      const res = await apiService.getProject(id);
+      setProject(res.data); // or just res if your API returns the object directly
+    } catch (error) {
+      console.error("Failed to fetch project:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load project details",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchProject();
+}, [id, toast]);
 
   const form = useForm<CreateProjectRequest>({
     resolver: zodResolver(projectSchema),
@@ -138,7 +159,7 @@ const EditProject: React.FC = () => {
   const onSubmit = async (data: CreateProjectRequest) => {
     setLoading(true);
     try {
-      await updateProject(id!, data);
+      await apiService.updateProject(id!, data);
       toast({
         title: "Success",
         description: "Project updated successfully!",

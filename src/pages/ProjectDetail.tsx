@@ -17,6 +17,15 @@ import {
   Calendar,
   BarChart3,
 } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import AddSchemeDialog from "@/components/AddSchemeDialog";
 
 const ProjectDetail: React.FC = () => {
@@ -27,7 +36,7 @@ const ProjectDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const { getSchemesForProject, deleteScheme } = useApp();
-  const [showAddScheme, setShowAddScheme] = useState(false); // TODO: manage dialog state
+  const [showAddScheme, setShowAddScheme] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -47,19 +56,73 @@ const ProjectDetail: React.FC = () => {
   }, [id]);
 
   const [schemes, setSchemes] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(4);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingSchemes, setLoadingSchemes] = useState(false);
+
+  const fetchSchemes = async () => {
+    if (!id) return;
+    try {
+      setLoadingSchemes(true);
+      const res = await apiService.getSchemesForProject(id, { page, limit });
+      console.log("Schemes API response:", res);
+      setSchemes(res.schemes ?? []); // use 'schemes' from API
+      setTotalPages(res.total_pages ?? 1);
+    } catch (err) {
+      console.error("Failed to fetch schemes:", err);
+    } finally {
+      setLoadingSchemes(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchSchemes = async () => {
-      if (!id) return;
-      try {
-        const res = await getSchemesForProject(id); // async call
-        setSchemes(res || []);
-      } catch (err) {
-        console.error("Failed to fetch schemes:", err);
-      }
-    };
     fetchSchemes();
-  }, [id, getSchemesForProject]);
+  }, [id, page, limit]);
+
+  // Pagination functions
+  const handlePreviousPage = () => {
+    if (page > 1) {
+      setPage(page - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (page < totalPages) {
+      setPage(page + 1);
+    }
+  };
+
+  const handlePageClick = (pageNumber: number) => {
+    setPage(pageNumber);
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      let startPage = Math.max(1, page - 2);
+      let endPage = Math.min(totalPages, page + 2);
+
+      if (page <= 3) {
+        endPage = Math.min(totalPages, maxVisiblePages);
+      } else if (page >= totalPages - 2) {
+        startPage = Math.max(1, totalPages - maxVisiblePages + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
+  };
 
   if (loading) {
     return (
@@ -120,11 +183,19 @@ const ProjectDetail: React.FC = () => {
     });
   };
 
-  const handleDeleteScheme = (schemeId: string) => {
+  const handleDeleteScheme = async (schemeId: string) => {
     if (
-      window.confirm("Are you sure you want to delete this investment scheme?")
+      !window.confirm("Are you sure you want to delete this investment scheme?")
     ) {
-      deleteScheme(schemeId);
+      return;
+    }
+
+    try {
+      await deleteScheme(schemeId); // call your API
+      // Reload schemes after deletion
+      fetchSchemes();
+    } catch (error) {
+      console.error("Failed to delete scheme:", error);
     }
   };
 
@@ -360,114 +431,169 @@ const ProjectDetail: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {schemes.map((scheme) => (
-                <Card key={scheme.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">
-                          {scheme.scheme_name}
-                        </CardTitle>
-                        <Badge
-                          variant={
-                            scheme.scheme_type === "single_payment"
-                              ? "default"
-                              : "secondary"
-                          }
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {schemes.map((scheme) => (
+                  <Card key={scheme.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-lg">
+                            {scheme.scheme_name}
+                          </CardTitle>
+                          <Badge
+                            variant={
+                              scheme.scheme_type === "single_payment"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {scheme.scheme_type.replace("_", " ")}
+                          </Badge>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteScheme(scheme.id)}
+                          className="text-destructive hover:text-destructive"
                         >
-                          {scheme.scheme_type.replace("_", " ")}
-                        </Badge>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteScheme(scheme.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Area</span>
-                        <p className="font-medium">{scheme.area_sqft} sq ft</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">
-                          Booking Advance
-                        </span>
-                        <p className="font-medium">
-                          {formatCurrency(scheme.booking_advance)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {scheme.scheme_type === "installment" && (
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-muted-foreground">
-                            Installments
-                          </span>
+                          <span className="text-muted-foreground">Area</span>
                           <p className="font-medium">
-                            {scheme.total_installments}
+                            {scheme.area_sqft} sq ft
                           </p>
                         </div>
                         <div>
                           <span className="text-muted-foreground">
-                            Monthly Amount
+                            Booking Advance
                           </span>
                           <p className="font-medium">
-                            {formatCurrency(scheme.monthly_installment_amount!)}
+                            {formatCurrency(scheme.booking_advance)}
                           </p>
                         </div>
                       </div>
+
+                      {scheme.scheme_type === "installment" && (
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">
+                              Installments
+                            </span>
+                            <p className="font-medium">
+                              {scheme.total_installments}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">
+                              Monthly Amount
+                            </span>
+                            <p className="font-medium">
+                              {formatCurrency(
+                                scheme.monthly_installment_amount!
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scheme.scheme_type === "single_payment" && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">
+                            Balance Payment Days
+                          </span>
+                          <p className="font-medium">
+                            {scheme.balance_payment_days} days
+                          </p>
+                        </div>
+                      )}
+
+                      {scheme.rental_start_month && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">
+                            Rental Start
+                          </span>
+                          <p className="font-medium">
+                            Month {scheme.rental_start_month}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-4 text-sm pt-2 border-t">
+                        <div>
+                          <span className="text-muted-foreground">
+                            Start Date
+                          </span>
+                          <p className="font-medium">
+                            {formatDate(scheme.start_date)}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">
+                            End Date
+                          </span>
+                          <p className="font-medium">
+                            {formatDate(scheme.end_date)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Pagination className="mt-6">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={handlePreviousPage}
+                        className={
+                          page === 1
+                            ? "pointer-events-none opacity-50"
+                            : "cursor-pointer"
+                        }
+                      />
+                    </PaginationItem>
+
+                    {getPageNumbers().map((pageNumber) => (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          onClick={() => handlePageClick(pageNumber)}
+                          isActive={pageNumber === page}
+                          className="cursor-pointer"
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                    {totalPages > 5 && page < totalPages - 2 && (
+                      <PaginationItem>
+                        <PaginationEllipsis />
+                      </PaginationItem>
                     )}
 
-                    {scheme.scheme_type === "single_payment" && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">
-                          Balance Payment Days
-                        </span>
-                        <p className="font-medium">
-                          {scheme.balance_payment_days} days
-                        </p>
-                      </div>
-                    )}
-
-                    {scheme.rental_start_month && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">
-                          Rental Start
-                        </span>
-                        <p className="font-medium">
-                          Month {scheme.rental_start_month}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-4 text-sm pt-2 border-t">
-                      <div>
-                        <span className="text-muted-foreground">
-                          Start Date
-                        </span>
-                        <p className="font-medium">
-                          {formatDate(scheme.start_date)}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">End Date</span>
-                        <p className="font-medium">
-                          {formatDate(scheme.end_date)}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={handleNextPage}
+                        className={
+                          page === totalPages
+                            ? "pointer-events-none opacity-50"
+                            : "cursor-pointer"
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>
@@ -478,6 +604,7 @@ const ProjectDetail: React.FC = () => {
         onOpenChange={setShowAddScheme}
         projectId={project.id}
         isCommercial={project.property_type === "commercial"}
+        onSchemeAdded={fetchSchemes}
       />
     </div>
   );

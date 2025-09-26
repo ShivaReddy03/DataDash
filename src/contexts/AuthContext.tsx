@@ -44,9 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 const login = async (credentials: LoginRequest) => {
   const response = await apiService.login(credentials);
-
-  localStorage.setItem("auth_token", response.token);
-  setUser(response.admin);
+console.log("Login response:", response);
+  localStorage.setItem("auth_token", response.data.token);
+  setUser(response.data.admin);
 
   try {
     const profile = await apiService.getProfile();

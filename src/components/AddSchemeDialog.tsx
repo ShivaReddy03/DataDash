@@ -17,13 +17,15 @@ interface AddSchemeDialogProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   isCommercial?: boolean;
+  onSchemeAdded?: () => void;
 }
 
 const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
   open,
   onOpenChange,
   projectId,
-  isCommercial = false
+  isCommercial = false,
+  onSchemeAdded
 }) => {
   const { addScheme } = useApp();
   const [loading, setLoading] = useState(false);
@@ -96,6 +98,7 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
       });
       setStartDate(undefined);
       setEndDate(undefined);
+      onSchemeAdded?.();
       
       onOpenChange(false);
     } catch (error) {

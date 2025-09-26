@@ -15,16 +15,16 @@ const API_BASE_URL = 'http://localhost:8000';
 
 // Fix: Define proper response interfaces
 interface PaginatedResponse<T> {
-  success: boolean;
   message: string;
-  projects: T[];
   page: number;
   limit: number;
   total_pages: number;
   total_projects?: number;
   total_schemes?: number;
-  has_next: boolean;
-  has_previous: boolean;
+  projects?: T[];
+  schemes?: T[];
+  is_previous: boolean;
+  is_next: boolean;
 }
 
 interface SingleItemResponse<T> {

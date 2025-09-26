@@ -27,16 +27,18 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface LoginResponse {
-  token: string;
-  admin: Admin;
-}
-
 export interface Admin {
   id: string;
   email: string;
-  created_at: string;
-  updated_at: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    admin: Admin;
+  };
 }
 
 // Project Types

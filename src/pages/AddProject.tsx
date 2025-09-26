@@ -67,7 +67,7 @@ const AddProject: React.FC = () => {
     defaultValues: {
       title: '',
       location: '',
-      property_type: 'residential',
+      property_type: 'commercial',
       base_price: 0,
       status: 'available',
       description: '',
@@ -77,7 +77,7 @@ const AddProject: React.FC = () => {
       available_units: 0,
       sold_units: 0,
       reserved_units: 0,
-      has_rental_income: false,
+      has_rental_income: true,
       rera_number: '',
       building_permission: '',
       pricing_details: {},

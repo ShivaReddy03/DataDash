@@ -79,6 +79,64 @@ class ApiService {
     return this.handleResponse<SingleItemResponse<Admin>>(response);
   }
 
+  // Add pagination support for getAdmins
+async getAdmins(page: number = 1, limit: number = 9): Promise<{ admins: Admin[]; total: number; page: number; pages: number }> {
+  const response = await fetch(`${API_BASE_URL}/admin/?page=${page}&limit=${limit}`, {
+    headers: this.getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const responseData = await response.json();
+  console.log('Raw API Response:', responseData);
+
+  // Handle the response structure { success: true, data: Array, total, page, pages }
+  if (responseData.success && responseData.data) {
+    return {
+      admins: responseData.data || [], // Directly use the data array
+      total: responseData.total || 0,
+      page: responseData.page || page,
+      pages: responseData.pages || 1
+    };
+  }
+
+  // Fallback for unexpected structure
+  return {
+    admins: [],
+    total: 0,
+    page: page,
+    pages: 1
+  };
+}
+// In your apiService.ts - ensure updateAdmin sends all three fields
+async updateAdmin(adminId: string, updateData: { name?: string; email?: string; password?: string }): Promise<Admin> {
+  const response = await fetch(`${API_BASE_URL}/admin/${adminId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...this.getAuthHeaders(),
+    },
+    body: JSON.stringify(updateData)
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+  }
+  
+  return this.handleResponse<Admin>(response);
+}
+ // Add this to your apiService.ts
+async deleteAdmin(adminId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/admin/${adminId}`, {
+    method: "DELETE",
+    headers: this.getAuthHeaders(),
+  });
+  return this.handleResponse<void>(response);
+}
+
   async getProfile(): Promise<SingleItemResponse<Admin>> {
     const response = await fetch(`${API_BASE_URL}/admin/profile/me`, {
       headers: this.getAuthHeaders(),

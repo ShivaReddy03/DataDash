@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
+import { apiService } from "@/services/api";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useToast } from '@/hooks/use-toast';
 import AddSchemeDialog from '@/components/AddSchemeDialog';
 import { 
@@ -16,32 +25,87 @@ import {
   Edit, 
   Trash2, 
   Calendar,
-  DollarSign,
+  Ruler,
   LayoutGrid,
   Building
 } from 'lucide-react';
-import type { Project, InvestmentScheme, CreateSchemeRequest } from '@/types/api';
+import type { Project, InvestmentScheme, CreateSchemeRequest, ProjectOption } from '@/types/api';
 
 const Schemes: React.FC = () => {
-  const { projects, schemes, getSchemesForProject, deleteScheme, updateScheme } = useApp();
+  const { deleteScheme,  } = useApp();
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [filteredSchemes, setFilteredSchemes] = useState<InvestmentScheme[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingScheme, setEditingScheme] = useState<InvestmentScheme | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
   const { toast } = useToast();
 
-  const selectedProjectData = projects.find(p => p.id === selectedProject);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalSchemes, setTotalSchemes] = useState(0);
 
+  // Fetch project options for dropdown
   useEffect(() => {
-    if (selectedProject) {
-      const projectSchemes = getSchemesForProject(selectedProject);
-      setFilteredSchemes(projectSchemes);
-    } else {
-      setFilteredSchemes([]);
-    }
-  }, [selectedProject, schemes, getSchemesForProject]);
+    const fetchProjectOptions = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiService.getProjectOptions();
+        setProjectOptions(response || []);
+      } catch (error) {
+        console.error('Failed to fetch project options:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load projects",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjectOptions();
+  }, [toast]);
+
+  // Fetch schemes with pagination
+  useEffect(() => {
+    const fetchSchemes = async () => {
+      if (!selectedProject) {
+        setFilteredSchemes([]);
+        setTotalPages(0);
+        setTotalSchemes(0);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const response = await apiService.getSchemesForProject(selectedProject, {
+          page: currentPage,
+          limit: itemsPerPage
+        });
+
+        setFilteredSchemes(response.schemes || []);
+        setTotalPages(response.total_pages || 1);
+        setTotalSchemes(response.total_schemes || 0);
+      } catch (error) {
+        console.error('Failed to fetch schemes:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load schemes",
+          variant: "destructive",
+        });
+        setFilteredSchemes([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSchemes();
+  }, [selectedProject, currentPage, itemsPerPage, toast]);
 
   const handleDeleteScheme = async (schemeId: string) => {
     try {
@@ -50,6 +114,17 @@ const Schemes: React.FC = () => {
         title: "Success",
         description: "Investment scheme deleted successfully",
       });
+      
+      // Refresh the schemes list
+      if (selectedProject) {
+        const response = await apiService.getSchemesForProject(selectedProject, {
+          page: currentPage,
+          limit: itemsPerPage
+        });
+        setFilteredSchemes(response.schemes || []);
+        setTotalPages(response.total_pages || 1);
+        setTotalSchemes(response.total_schemes || 0);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -57,6 +132,49 @@ const Schemes: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = parseInt(value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  // Function to generate pagination links with ellipsis
+  const generatePaginationLinks = () => {
+    const pages: JSX.Element[] = [];
+    const delta = 1; // Number of pages to show around current page
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - delta && i <= currentPage + delta)
+      ) {
+        pages.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              onClick={() => handlePageChange(i)}
+              isActive={i === currentPage}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      } else if (
+        i === currentPage - delta - 1 ||
+        i === currentPage + delta + 1
+      ) {
+        pages.push(<PaginationEllipsis key={`ellipsis-${i}`} />);
+      }
+    }
+    return pages;
   };
 
   const formatCurrency = (amount: number) => {
@@ -105,16 +223,22 @@ const Schemes: React.FC = () => {
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
             <div className="flex-1">
-              <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <Select 
+                value={selectedProject} 
+                onValueChange={(value) => {
+                  setSelectedProject(value);
+                  setCurrentPage(1);
+                }}
+                disabled={isLoading}
+              >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a project to view its schemes" />
+                  <SelectValue placeholder={isLoading ? "Loading projects..." : "Choose a project to view its schemes"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects.map((project) => (
+                  {projectOptions.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       <div className="flex items-center space-x-2">
                         <span>{project.title}</span>
-                        <span className="text-muted-foreground">({project.location})</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -126,24 +250,13 @@ const Schemes: React.FC = () => {
               <Button 
                 className="flex items-center space-x-2"
                 onClick={() => setIsAddDialogOpen(true)}
+                disabled={isLoading}
               >
                 <Plus className="h-4 w-4" />
                 <span>Add Scheme</span>
               </Button>
             )}
           </div>
-          
-          {selectedProjectData && (
-            <div className="mt-4 p-4 bg-muted rounded-lg">
-              <h3 className="font-semibold">{selectedProjectData.title}</h3>
-              <p className="text-sm text-muted-foreground">{selectedProjectData.location}</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge variant="outline">{selectedProjectData.property_type}</Badge>
-                <Badge variant="outline">{formatCurrency(selectedProjectData.base_price)}</Badge>
-                <Badge variant="outline">{selectedProjectData.total_units} units</Badge>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -154,6 +267,22 @@ const Schemes: React.FC = () => {
             <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Select a Project</h3>
             <p className="text-muted-foreground">Choose a project above to view and manage its investment schemes</p>
+          </CardContent>
+        </Card>
+      ) : isLoading ? (
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       ) : filteredSchemes.length === 0 ? (
@@ -168,13 +297,13 @@ const Schemes: React.FC = () => {
       ) : (
         <>
           {/* Schemes Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Total Schemes</p>
-                    <p className="text-2xl font-bold">{filteredSchemes.length}</p>
+                    <p className="text-2xl font-bold">{totalSchemes}</p>
                   </div>
                   <TrendingUp className="h-8 w-8 text-primary" />
                 </div>
@@ -188,7 +317,7 @@ const Schemes: React.FC = () => {
                     <p className="text-sm text-muted-foreground">Active Schemes</p>
                     <p className="text-2xl font-bold">{filteredSchemes.filter(s => s.is_active).length}</p>
                   </div>
-                  <LayoutGrid className="h-8 w-8 text-success" />
+                  <LayoutGrid className="h-8 w-8 text-green-500" />
                 </div>
               </CardContent>
             </Card>
@@ -202,10 +331,48 @@ const Schemes: React.FC = () => {
                       {Math.round(filteredSchemes.reduce((acc, s) => acc + s.area_sqft, 0) / filteredSchemes.length)} sq ft
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-warning" />
+                  <Ruler className="h-8 w-8 text-yellow-500" />
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Page Info</p>
+                    <p className="text-2xl font-bold">
+                      {currentPage} / {totalPages}
+                    </p>
+                  </div>
+                  <Calendar className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="itemsPerPage" className="text-sm whitespace-nowrap">
+                Items per page:
+              </Label>
+              <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="6">6</SelectItem>
+                  <SelectItem value="12">12</SelectItem>
+                  <SelectItem value="24">24</SelectItem>
+                  <SelectItem value="48">48</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="text-sm text-muted-foreground text-center sm:text-right">
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalSchemes)} of {totalSchemes} schemes
+            </div>
           </div>
 
           {/* Schemes Grid */}
@@ -219,7 +386,7 @@ const Schemes: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         {getSchemeTypeBadge(scheme.scheme_type)}
                         {scheme.is_active ? (
-                          <Badge variant="default" className="bg-success">Active</Badge>
+                          <Badge variant="default" className="bg-green-500">Active</Badge>
                         ) : (
                           <Badge variant="secondary">Inactive</Badge>
                         )}
@@ -281,7 +448,7 @@ const Schemes: React.FC = () => {
                           setEditingScheme(scheme);
                           setIsEditDialogOpen(true);
                         }}
-                        className="hover:bg-info hover:text-info-foreground transition-colors"
+                        className="hover:bg-blue-100 hover:text-blue-800 transition-colors"
                       >
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
@@ -294,7 +461,7 @@ const Schemes: React.FC = () => {
                             handleDeleteScheme(scheme.id);
                           }
                         }}
-                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                        className="text-red-600 hover:bg-red-100 hover:text-red-800 transition-colors"
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
@@ -305,6 +472,33 @@ const Schemes: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          {/* Shadcn Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center py-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      aria-disabled={currentPage === 1}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {generatePaginationLinks()}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      aria-disabled={currentPage === totalPages}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </>
       )}
 
@@ -314,7 +508,19 @@ const Schemes: React.FC = () => {
           open={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
           projectId={selectedProject}
-          isCommercial={selectedProjectData?.property_type === 'commercial'}
+          onSuccess={() => {
+            // Refresh schemes after successful addition
+            if (selectedProject) {
+              apiService.getSchemesForProject(selectedProject, {
+                page: currentPage,
+                limit: itemsPerPage
+              }).then(response => {
+                setFilteredSchemes(response.schemes || []);
+                setTotalPages(response.total_pages || 1);
+                setTotalSchemes(response.total_schemes || 0);
+              });
+            }
+          }}
         />
       )}
     </div>

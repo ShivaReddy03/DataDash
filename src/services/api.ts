@@ -8,7 +8,8 @@ import type {
   InvestmentScheme,
   CreateSchemeRequest,
   ProjectsQueryParams,
-  SchemesQueryParams
+  SchemesQueryParams,
+  ProjectOption
 } from '@/types/api';
 
 const API_BASE_URL = 'http://localhost:8000';
@@ -109,6 +110,14 @@ class ApiService {
     });
     return this.handleResponse<SingleItemResponse<Project>>(response);
   }
+
+  async getProjectOptions(): Promise<ProjectOption[]> {
+  const response = await fetch(`${API_BASE_URL}/projects/options`, {
+    headers: this.getAuthHeaders(),
+  });
+  const json = await this.handleResponse<{ success: boolean; message: string; data: ProjectOption[] }>(response);
+  return json.data;
+}
 
   async createProject(projectData: CreateProjectRequest): Promise<SingleItemResponse<Project>> {
     const response = await fetch(`${API_BASE_URL}/projects/`, {

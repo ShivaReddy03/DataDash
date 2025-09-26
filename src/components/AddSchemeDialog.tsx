@@ -11,6 +11,7 @@ import { CalendarIcon, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { InvestmentScheme, CreateSchemeRequest } from '@/types';
+import { useToast } from '@/hooks/use-toast'; // Added toast hook
 
 interface AddSchemeDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface AddSchemeDialogProps {
   projectId: string;
   isCommercial?: boolean;
   onSchemeAdded?: () => void;
+  onSuccess?: () => void; // Added onSuccess prop
 }
 
 const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
@@ -25,9 +27,11 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
   onOpenChange,
   projectId,
   isCommercial = false,
-  onSchemeAdded
+  onSchemeAdded,
+  onSuccess // Added onSuccess prop
 }) => {
   const { addScheme } = useApp();
+  const { toast } = useToast(); // Added toast
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -53,8 +57,23 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
     if (!startDate || !endDate) {
-      alert('Please select start and end dates');
+      toast({
+        title: "Error",
+        description: "Please select start and end dates",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.scheme_name || !formData.area_sqft || !formData.booking_advance) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -73,8 +92,26 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
       };
 
       if (formData.scheme_type === 'single_payment') {
+        if (!formData.balance_payment_days) {
+          toast({
+            title: "Error",
+            description: "Balance payment days is required for single payment scheme",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
         schemeData.balance_payment_days = parseInt(formData.balance_payment_days);
       } else {
+        if (!formData.total_installments || !formData.monthly_installment_amount) {
+          toast({
+            title: "Error",
+            description: "Installment details are required for installment scheme",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
         schemeData.total_installments = parseInt(formData.total_installments);
         schemeData.monthly_installment_amount = parseFloat(formData.monthly_installment_amount);
       }
@@ -98,18 +135,53 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
       });
       setStartDate(undefined);
       setEndDate(undefined);
-      onSchemeAdded?.();
       
+      // Show success message
+      toast({
+        title: "Success",
+        description: "Investment scheme created successfully",
+      });
+      
+      // Call both callbacks if provided
+      onSchemeAdded?.();
+      onSuccess?.();
+      
+      // Close dialog
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding scheme:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create investment scheme",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  // Reset form when dialog closes
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      // Reset form when closing
+      setFormData({
+        scheme_name: '',
+        scheme_type: 'single_payment',
+        area_sqft: '',
+        booking_advance: '',
+        balance_payment_days: '',
+        total_installments: '',
+        monthly_installment_amount: '',
+        rental_start_month: ''
+      });
+      setStartDate(undefined);
+      setEndDate(undefined);
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Investment Scheme</DialogTitle>
@@ -119,54 +191,62 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="scheme_name">Scheme Name</Label>
+              <Label htmlFor="scheme_name">Scheme Name *</Label>
               <Input
                 id="scheme_name"
                 value={formData.scheme_name}
                 onChange={(e) => handleInputChange('scheme_name', e.target.value)}
+                placeholder="Enter scheme name"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="area_sqft">Area (Sq Ft)</Label>
+              <Label htmlFor="area_sqft">Area (Sq Ft) *</Label>
               <Input
                 id="area_sqft"
                 type="number"
                 value={formData.area_sqft}
                 onChange={(e) => handleInputChange('area_sqft', e.target.value)}
+                placeholder="Enter area in square feet"
+                min="0"
+                step="0.01"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="booking_advance">Booking Advance</Label>
+            <Label htmlFor="booking_advance">Booking Advance *</Label>
             <Input
               id="booking_advance"
               type="number"
               value={formData.booking_advance}
               onChange={(e) => handleInputChange('booking_advance', e.target.value)}
+              placeholder="Enter booking advance amount"
+              min="0"
+              step="0.01"
               required
             />
           </div>
 
           {/* Scheme Type */}
           <div className="space-y-3">
-            <Label>Scheme Type</Label>
+            <Label>Scheme Type *</Label>
             <RadioGroup
               value={formData.scheme_type}
               onValueChange={(value: InvestmentScheme['scheme_type']) => 
                 handleInputChange('scheme_type', value)
               }
+              className="flex space-x-4"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="single_payment" id="single_payment" />
-                <Label htmlFor="single_payment">Single Payment</Label>
+                <Label htmlFor="single_payment" className="cursor-pointer">Single Payment</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="installment" id="installment" />
-                <Label htmlFor="installment">Installment</Label>
+                <Label htmlFor="installment" className="cursor-pointer">Installment</Label>
               </div>
             </RadioGroup>
           </div>
@@ -174,12 +254,14 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
           {/* Conditional Fields */}
           {formData.scheme_type === 'single_payment' && (
             <div className="space-y-2">
-              <Label htmlFor="balance_payment_days">Balance Payment Days</Label>
+              <Label htmlFor="balance_payment_days">Balance Payment Days *</Label>
               <Input
                 id="balance_payment_days"
                 type="number"
                 value={formData.balance_payment_days}
                 onChange={(e) => handleInputChange('balance_payment_days', e.target.value)}
+                placeholder="Enter number of days for balance payment"
+                min="0"
                 required
               />
             </div>
@@ -188,23 +270,28 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
           {formData.scheme_type === 'installment' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="total_installments">Total Installments</Label>
+                <Label htmlFor="total_installments">Total Installments *</Label>
                 <Input
                   id="total_installments"
                   type="number"
                   value={formData.total_installments}
                   onChange={(e) => handleInputChange('total_installments', e.target.value)}
+                  placeholder="Enter total installments"
+                  min="0"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="monthly_installment_amount">Monthly Installment Amount</Label>
+                <Label htmlFor="monthly_installment_amount">Monthly Installment Amount *</Label>
                 <Input
                   id="monthly_installment_amount"
                   type="number"
                   value={formData.monthly_installment_amount}
                   onChange={(e) => handleInputChange('monthly_installment_amount', e.target.value)}
+                  placeholder="Enter monthly amount"
+                  min="0"
+                  step="0.01"
                   required
                 />
               </div>
@@ -220,7 +307,9 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
                 type="number"
                 value={formData.rental_start_month}
                 onChange={(e) => handleInputChange('rental_start_month', e.target.value)}
-                placeholder="Enter month number (e.g., 6 for June)"
+                placeholder="Enter month number (1-12)"
+                min="1"
+                max="12"
               />
             </div>
           )}
@@ -228,7 +317,7 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
           {/* Date Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Start Date</Label>
+              <Label>Start Date *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -255,7 +344,7 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label>End Date</Label>
+              <Label>End Date *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -287,7 +376,8 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
+              disabled={loading}
             >
               Cancel
             </Button>

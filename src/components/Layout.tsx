@@ -132,7 +132,7 @@ const Layout: React.FC = () => {
               {location.pathname === '/settings' && 'Settings'}
             </h1>
             <div className="text-sm text-muted-foreground">
-              Welcome back, {user?.email?.split('@')[0]}
+              Welcome back, {user?.name || user?.email?.split('@')[0]}
             </div>
           </div>
         </header>

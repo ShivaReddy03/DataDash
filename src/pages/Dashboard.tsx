@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { apiService } from "@/services/api";
 import type { Project, ProjectStatus, PropertyType } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge, PropertyTypeBadge } from "@/components/ui/status-badge";
+import type { DashboardResponse } from "@/types/api";
 import {
   Building2,
   MapPin,
@@ -35,48 +36,84 @@ import { Input } from "@/components/ui/input";
 const Dashboard: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
 
   // Pagination + filter state
   const [page, setPage] = useState(1);
   const [limit] = useState(6);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Fix: Provide default values for filters
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">(
+    "all"
+  );
   const [propertyType, setPropertyType] = useState<PropertyType | "all">("all");
   const [minPrice, setMinPrice] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<string>("");
 
-const fetchProjects = async () => {
-  try {
-    setIsLoading(true);
+  // Debounced values for price filters
+  const [debouncedMinPrice, setDebouncedMinPrice] = useState<string>("");
+  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState<string>("");
 
-    const params = {
-      page,
-      limit,
-      status_filter: statusFilter === "all" ? undefined : statusFilter,
-      property_type: propertyType === "all" ? undefined : propertyType,
-      min_price: minPrice ? Number(minPrice) : undefined,
-      max_price: maxPrice ? Number(maxPrice) : undefined,
+  // Debounce function
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedMinPrice(minPrice);
+      setDebouncedMaxPrice(maxPrice);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [minPrice, maxPrice]);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const res = await apiService.getDashboard();
+        setDashboard(res);
+      } catch (err) {
+        console.error("Failed to fetch dashboard:", err);
+      }
     };
 
-    const res = await apiService.getProjects(params);
-    console.log(res); // good to keep for debugging
+    fetchDashboard();
+  }, []);
 
-    // Corrected
-    setProjects(res.projects || []);
-    setTotalPages(res.total_pages || 1);
-  } catch (error) {
-    console.error("Failed to fetch projects:", error);
-    setProjects([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  const fetchProjects = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      const params = {
+        page,
+        limit,
+        status_filter: statusFilter === "all" ? undefined : statusFilter,
+        property_type: propertyType === "all" ? undefined : propertyType,
+        min_price: debouncedMinPrice ? Number(debouncedMinPrice) : undefined,
+        max_price: debouncedMaxPrice ? Number(debouncedMaxPrice) : undefined,
+      };
+
+      const res = await apiService.getProjects(params);
+      console.log(res);
+
+      setProjects(res.projects || []);
+      setTotalPages(res.total_pages || 1);
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+      setProjects([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    page,
+    limit,
+    statusFilter,
+    propertyType,
+    debouncedMinPrice,
+    debouncedMaxPrice,
+  ]);
 
   useEffect(() => {
     fetchProjects();
-  }, [page, statusFilter, propertyType, minPrice, maxPrice]);
+  }, [fetchProjects]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -86,7 +123,6 @@ const fetchProjects = async () => {
       maximumFractionDigits: 0,
     }).format(amount);
 
-  // Fix: Handle delete project properly
   const handleDeleteProject = async (id: string) => {
     if (
       window.confirm(
@@ -101,6 +137,10 @@ const fetchProjects = async () => {
       }
     }
   };
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, propertyType, debouncedMinPrice, debouncedMaxPrice]);
 
   if (isLoading) {
     return (
@@ -122,7 +162,9 @@ const fetchProjects = async () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Projects</p>
-                <p className="text-2xl font-bold">{projects.length}</p>
+                <p className="text-2xl font-bold">
+                  {dashboard ? dashboard.total_projects : "--"}
+                </p>
               </div>
               <Building2 className="h-8 w-8 text-primary" />
             </div>
@@ -134,7 +176,9 @@ const fetchProjects = async () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">50</p>
+                <p className="text-2xl font-bold">
+                  {dashboard ? dashboard.tatal_users : "--"}
+                </p>
               </div>
               <Users className="h-8 w-8 text-success" />
             </div>
@@ -148,7 +192,9 @@ const fetchProjects = async () => {
                 <p className="text-sm text-muted-foreground">
                   Investment Schemes
                 </p>
-                <p className="text-2xl font-bold">8</p>
+                <p className="text-2xl font-bold">
+                  {dashboard ? dashboard.total_schemes : "--"}
+                </p>
               </div>
               <TrendingUp className="h-8 w-8 text-accent-foreground" />
             </div>
@@ -160,10 +206,12 @@ const fetchProjects = async () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <h2 className="text-xl font-semibold">Projects</h2>
         <div className="flex flex-wrap items-center gap-4">
-          {/* Status Filter - FIXED */}
+          {/* Status Filter */}
           <Select
             value={statusFilter}
-            onValueChange={(value: ProjectStatus | "all") => setStatusFilter(value)}
+            onValueChange={(value: ProjectStatus | "all") =>
+              setStatusFilter(value)
+            }
           >
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Status" />
@@ -177,10 +225,12 @@ const fetchProjects = async () => {
             </SelectContent>
           </Select>
 
-          {/* Property Type Filter - FIXED */}
+          {/* Property Type Filter */}
           <Select
             value={propertyType}
-            onValueChange={(value: PropertyType | "all") => setPropertyType(value)}
+            onValueChange={(value: PropertyType | "all") =>
+              setPropertyType(value)
+            }
           >
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Property Type" />
@@ -237,7 +287,10 @@ const fetchProjects = async () => {
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No projects found</h3>
             <p className="text-muted-foreground mb-4">
-              {statusFilter !== "all" || propertyType !== "all" || minPrice || maxPrice
+              {statusFilter !== "all" ||
+              propertyType !== "all" ||
+              minPrice ||
+              maxPrice
                 ? "Try adjusting your filters"
                 : "Get started by creating your first project"}
             </p>
@@ -344,7 +397,9 @@ const fetchProjects = async () => {
                         e.preventDefault();
                         if (page > 1) setPage(page - 1);
                       }}
-                      className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                      className={
+                        page <= 1 ? "pointer-events-none opacity-50" : ""
+                      }
                     />
                   </PaginationItem>
                   {Array.from({ length: totalPages }, (_, i) => (
@@ -368,7 +423,11 @@ const fetchProjects = async () => {
                         e.preventDefault();
                         if (page < totalPages) setPage(page + 1);
                       }}
-                      className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+                      className={
+                        page >= totalPages
+                          ? "pointer-events-none opacity-50"
+                          : ""
+                      }
                     />
                   </PaginationItem>
                 </PaginationContent>

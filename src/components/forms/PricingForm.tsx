@@ -1,73 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Plus, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { CreateProjectRequest } from '@/types';
 
 interface PricingFormProps {
   form: UseFormReturn<CreateProjectRequest>;
 }
 
-interface PricingDetail {
-  key: string;
-  value: string;
-}
-
 export const PricingForm: React.FC<PricingFormProps> = ({ form }) => {
-  const [pricingDetails, setPricingDetails] = useState<PricingDetail[]>([
-    { key: '', value: '' }
-  ]);
+  const pricingOptions = [
+    { label: 'Rent per sqft', value: 'rent_per_sqft' },
+    { label: 'Sale price per sqft', value: 'sale_price_per_sqft' }
+  ];
 
-  const watchedPricingDetails = form.watch('pricing_details');
+  // Watch the pricing_details to get real-time updates
+  const pricingDetails = form.watch('pricing_details') || {};
+  const currentKey = Object.keys(pricingDetails)[0] || '';
+  const currentValue = pricingDetails[currentKey] || 0; // Default to 0
 
-  useEffect(() => {
-    if (watchedPricingDetails && Object.keys(watchedPricingDetails).length > 0) {
-      const details = Object.entries(watchedPricingDetails).map(([key, value]) => ({
-        key,
-        value: String(value)
-      }));
-      setPricingDetails(details.length > 0 ? details : [{ key: '', value: '' }]);
-    }
-  }, [watchedPricingDetails]);
-
-  const handlePricingChange = (index: number, field: 'key' | 'value', value: string) => {
-    const newDetails = [...pricingDetails];
-    newDetails[index][field] = value;
-    setPricingDetails(newDetails);
-    
-    // Update form value
-    const pricingObj: Record<string, any> = {};
-    newDetails.forEach(detail => {
-      if (detail.key.trim()) {
-        const numValue = parseFloat(detail.value);
-        pricingObj[detail.key.trim()] = !isNaN(numValue) && detail.value.trim() !== '' ? numValue : detail.value;
-      }
+  const handlePricingTypeChange = (value: string) => {
+    // Set default value to 0 instead of the previous values
+    form.setValue('pricing_details', {
+      [value]: 0
     });
-    form.setValue('pricing_details', pricingObj);
   };
 
-  const addPricingDetail = () => {
-    setPricingDetails([...pricingDetails, { key: '', value: '' }]);
-  };
-
-  const removePricingDetail = (index: number) => {
-    if (pricingDetails.length > 1) {
-      const newDetails = pricingDetails.filter((_, i) => i !== index);
-      setPricingDetails(newDetails);
-      
-      const pricingObj: Record<string, any> = {};
-      newDetails.forEach(detail => {
-        if (detail.key.trim()) {
-          const numValue = parseFloat(detail.value);
-          pricingObj[detail.key.trim()] = !isNaN(numValue) && detail.value.trim() !== '' ? numValue : detail.value;
-        }
-      });
-      form.setValue('pricing_details', pricingObj);
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    if (currentKey) {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        form.setValue('pricing_details', {
+          [currentKey]: numValue
+        });
+      } else if (value === '') {
+        // Set to 0 if empty
+        form.setValue('pricing_details', {
+          [currentKey]: 0
+        });
+      }
     }
   };
 
@@ -77,66 +54,75 @@ export const PricingForm: React.FC<PricingFormProps> = ({ form }) => {
         <CardTitle>Pricing Information</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <FormField
-          control={form.control}
-          name="has_rental_income"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between">
-              <div>
-                <FormLabel>Rental Income Available</FormLabel>
-                <p className="text-sm text-muted-foreground">
-                  Does this property generate rental income?
-                </p>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
         <div className="space-y-4">
-          <Label className="text-sm font-medium">Pricing Details</Label>
-          {pricingDetails.map((detail, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <div className="flex-1">
-                <Input
-                  placeholder="e.g., rent_per_sqft"
-                  value={detail.key}
-                  onChange={(e) => handlePricingChange(index, 'key', e.target.value)}
-                />
-              </div>
-              <div className="flex-1">
-                <Input
-                  placeholder="Value"
-                  value={detail.value}
-                  onChange={(e) => handlePricingChange(index, 'value', e.target.value)}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => removePricingDetail(index)}
-                disabled={pricingDetails.length === 1}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={addPricingDetail}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Pricing Detail
-          </Button>
+          <FormField
+            control={form.control}
+            name="pricing_details"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Pricing Type</FormLabel>
+                <Select 
+                  onValueChange={handlePricingTypeChange} 
+                  value={currentKey}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select pricing type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {pricingOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {currentKey && (
+            <FormField
+              control={form.control}
+              name="pricing_details"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {currentKey === 'rent_per_sqft' ? 'Rent per sqft (₹)' : 'Sale price per sqft (₹)'}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={currentValue === 0 ? '' : currentValue} // Show empty when 0 for better UX
+                      onChange={handlePriceChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
+
+        {/* Display current pricing details */}
+        {currentKey && (
+          <div className="p-4 bg-muted rounded-lg">
+            <h4 className="font-medium mb-2">Current Pricing</h4>
+            <div className="text-sm">
+              <span className="capitalize">
+                {currentKey.replace(/_/g, ' ')}: 
+              </span>
+              <span className="font-semibold ml-2">
+                ₹{typeof currentValue === 'number' ? currentValue.toFixed(2) : '0.00'}
+              </span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

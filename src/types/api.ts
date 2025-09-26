@@ -173,3 +173,9 @@ export interface SchemesQueryParams {
   limit?: number;
   page?: number;
 }
+
+export interface DashboardResponse {
+  tatal_users: number; 
+  total_projects: number;
+  total_schemes: number;
+}

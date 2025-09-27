@@ -6,6 +6,8 @@ import { apiService } from "@/services/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InvestmentScheme } from "@/types/api";
+import EditSchemeDialog from "@/components/EditSchemeDialog";
 import {
   MapPin,
   DollarSign,
@@ -60,6 +62,10 @@ const ProjectDetail: React.FC = () => {
   const [limit] = useState(4);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingSchemes, setLoadingSchemes] = useState(false);
+  const [editingScheme, setEditingScheme] = useState<InvestmentScheme | null>(
+    null
+  );
+  const [showEditScheme, setShowEditScheme] = useState(false);
 
   const fetchSchemes = async () => {
     if (!id) return;
@@ -250,6 +256,29 @@ const ProjectDetail: React.FC = () => {
                   <p className="text-muted-foreground">{project.description}</p>
                 </div>
 
+                {project.long_description && (
+                  <div>
+                    <h4 className="font-medium mb-2">Detailed Overview</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {project.long_description}
+                    </p>
+                  </div>
+                )}
+
+                {project.website_url && (
+                  <div>
+                    <h4 className="font-medium">Website</h4>
+                    <a
+                      href={project.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      {project.website_url}
+                    </a>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-medium">Base Price</h4>
@@ -263,6 +292,25 @@ const ProjectDetail: React.FC = () => {
                       {project.property_type.replace("_", " ")}
                     </p>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {project.rera_number && (
+                    <div>
+                      <h4 className="font-medium">RERA Number</h4>
+                      <p className="text-muted-foreground">
+                        {project.rera_number}
+                      </p>
+                    </div>
+                  )}
+                  {project.building_permission && (
+                    <div>
+                      <h4 className="font-medium">Building Permission</h4>
+                      <p className="text-muted-foreground">
+                        {project.building_permission}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -281,31 +329,111 @@ const ProjectDetail: React.FC = () => {
                     </div>
                   )
                 )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Created At</span>
+                  <span className="font-medium">
+                    {formatDate(project.created_at)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Updated At</span>
+                  <span className="font-medium">
+                    {formatDate(project.updated_at)}
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* Gallery */}
+          {project.gallery_images?.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Gallery</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {project.gallery_images.map((img: any, idx: number) => (
+                  <div key={idx} className="space-y-2">
+                    <img
+                      src={img.url}
+                      alt={img.caption}
+                      className="rounded-lg shadow-md object-cover w-full h-48"
+                    />
+                    {img.caption && (
+                      <p className="text-sm text-muted-foreground">
+                        {img.caption}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Highlights */}
+          {project.key_highlights?.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Highlights</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  {project.key_highlights.map((item: string, idx: number) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {project.features?.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Features</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  {project.features.map((item: string, idx: number) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {project.investment_highlights?.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Investment Highlights</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  {project.investment_highlights.map(
+                    (item: string, idx: number) => (
+                      <li key={idx}>{item}</li>
+                    )
+                  )}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Amenities */}
           <Card>
             <CardHeader>
-              <CardTitle>Amenities & Features</CardTitle>
+              <CardTitle>Amenities</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {Object.entries(project.amenities ?? {}).map(([key, value]) => (
-                  <div key={key} className="flex items-center space-x-2">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        value ? "bg-success" : "bg-muted"
-                      }`}
-                    />
-                    <span
-                      className={
-                        value ? "text-foreground" : "text-muted-foreground"
-                      }
-                    >
-                      {key}
-                    </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(project.amenities ?? []).map((amenity: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-md border flex flex-col"
+                  >
+                    <span className="font-medium">{amenity.name}</span>
+                    <p className="text-sm text-muted-foreground">
+                      {amenity.description}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -451,14 +579,26 @@ const ProjectDetail: React.FC = () => {
                             {scheme.scheme_type.replace("_", " ")}
                           </Badge>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteScheme(scheme.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingScheme(scheme);
+                              setShowEditScheme(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteScheme(scheme.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -606,6 +746,16 @@ const ProjectDetail: React.FC = () => {
         isCommercial={project.property_type === "commercial"}
         onSchemeAdded={fetchSchemes}
       />
+      {/* Edit Scheme Dialog */}
+      {editingScheme && (
+        <EditSchemeDialog
+          open={showEditScheme}
+          onOpenChange={setShowEditScheme}
+          scheme={editingScheme}
+          isCommercial={project.property_type === "commercial"}
+          onSuccess={fetchSchemes} // Refresh schemes after editing
+        />
+      )}
     </div>
   );
 };

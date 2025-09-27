@@ -204,10 +204,18 @@ const AddProject: React.FC = () => {
           {/* Submit Actions - Always Visible */}
           <Card>
             <CardContent className="pt-6">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  * Required fields must be completed before saving
-                </p>
+              <div className="flex justify-between items-start">
+                {/* Texts stacked vertically */}
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm text-muted-foreground">
+                    * Required fields must be completed before saving
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    * Total units must match sum of other unit fields
+                  </p>
+                </div>
+
+                {/* Buttons aligned horizontally */}
                 <div className="flex space-x-4">
                   <Button
                     type="button"

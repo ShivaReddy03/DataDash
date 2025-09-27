@@ -112,6 +112,14 @@ const UserManagement: React.FC = () => {
       });
       return;
     }
+    if (formData.password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSubmitting(true);
     try {
       await apiService.createAdmin(formData);
@@ -125,7 +133,7 @@ const UserManagement: React.FC = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create user",
+        description: "Failed to create user",
         variant: "destructive",
       });
     } finally {
@@ -144,6 +152,14 @@ const UserManagement: React.FC = () => {
       });
       return;
     }
+    if (editFormData.password.length < 6 && editFormData.password !== "") {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long ",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsEditing(true);
     try {
@@ -151,10 +167,8 @@ const UserManagement: React.FC = () => {
       const updateData = {
         name: editFormData.name,
         email: editFormData.email,
-        password: editFormData.password, // Send password as is, let backend handle empty string
+        password: editFormData.password,
       };
-
-      console.log("Updating user with data:", updateData);
 
       await apiService.updateAdmin(editingUser.id, updateData);
 
@@ -168,13 +182,14 @@ const UserManagement: React.FC = () => {
 
       // Refresh current page after a short delay to show success message
       setTimeout(() => {
+        setIsSuccessDialogOpen(false);
         fetchUsers(currentPage);
-      }, 1000);
+      }, 2000);
     } catch (error: any) {
       console.error("Error updating user:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update user",
+        description: "Failed to update user",
         variant: "destructive",
       });
     } finally {
@@ -193,7 +208,7 @@ const UserManagement: React.FC = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete user",
+        description: "Failed to delete user",
         variant: "destructive",
       });
     }
@@ -472,27 +487,16 @@ const UserManagement: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-r from-green-50 to-green-100">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Current Page</p>
-                <p className="text-2xl font-bold">{currentPage}</p>
-              </div>
-              <Badge variant="secondary" className="text-sm">
-                Page {currentPage} of {totalPages}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
         <Card className="bg-gradient-to-r from-purple-50 to-purple-100">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Users This Page</p>
-                <p className="text-2xl font-bold">{filteredUsers.length}</p>
+                <p className="text-sm text-muted-foreground">Page info</p>
+                <p className="text-2xl font-bold">
+                  {currentPage}/{totalPages}
+                </p>
               </div>
-              <User className="h-8 w-8 text-purple-500" />
+              <Calendar className="h-8 w-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>

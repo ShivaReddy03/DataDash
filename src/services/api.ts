@@ -129,13 +129,17 @@ class ApiService {
     adminId: string,
     updateData: { name?: string; email?: string; password?: string }
   ): Promise<Admin> {
+    const payload = {
+      ...updateData,
+      password: updateData.password?.trim() ? updateData.password : null,
+    };
     const response = await fetch(`${API_BASE_URL}/admin/${adminId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         ...this.getAuthHeaders(),
       },
-      body: JSON.stringify(updateData),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {

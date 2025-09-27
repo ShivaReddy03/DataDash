@@ -636,6 +636,10 @@ const Schemes: React.FC = () => {
           open={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
           projectId={selectedProject}
+          isCommercial={
+            projectOptions.find((p) => p.id === selectedProject)
+              ?.property_type === "commercial"
+          }
           onSuccess={() => {
             // Refresh schemes after successful addition
             if (selectedProject) {
@@ -658,6 +662,10 @@ const Schemes: React.FC = () => {
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
           scheme={editingScheme}
+          isCommercial={
+            projectOptions.find((p) => p.id === selectedProject)
+              ?.property_type === "commercial"
+          }
           onSuccess={refreshSchemes} // Your refresh function
         />
       )}

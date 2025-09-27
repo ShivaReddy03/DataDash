@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Save } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import type { InvestmentScheme, CreateSchemeRequest } from '@/types';
-import { useToast } from '@/hooks/use-toast'; // Added toast hook
+import React, { useState } from "react";
+import { useApp } from "@/contexts/AppContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon, Save } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import type { InvestmentScheme, CreateSchemeRequest } from "@/types";
+import { useToast } from "@/hooks/use-toast"; // Added toast hook
 
 interface AddSchemeDialogProps {
   open: boolean;
@@ -28,36 +37,36 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
   projectId,
   isCommercial = false,
   onSchemeAdded,
-  onSuccess // Added onSuccess prop
+  onSuccess, // Added onSuccess prop
 }) => {
   const { addScheme } = useApp();
   const { toast } = useToast(); // Added toast
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    scheme_name: '',
-    scheme_type: 'single_payment' as InvestmentScheme['scheme_type'],
-    area_sqft: '',
-    booking_advance: '',
-    balance_payment_days: '',
-    total_installments: '',
-    monthly_installment_amount: '',
-    rental_start_month: ''
+    scheme_name: "",
+    scheme_type: "single_payment" as InvestmentScheme["scheme_type"],
+    area_sqft: "",
+    booking_advance: "",
+    balance_payment_days: "",
+    total_installments: "",
+    monthly_installment_amount: "",
+    rental_start_month: "",
   });
 
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!startDate || !endDate) {
       toast({
@@ -68,7 +77,11 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
       return;
     }
 
-    if (!formData.scheme_name || !formData.area_sqft || !formData.booking_advance) {
+    if (
+      !formData.scheme_name ||
+      !formData.area_sqft ||
+      !formData.booking_advance
+    ) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -86,34 +99,43 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
         scheme_type: formData.scheme_type,
         area_sqft: parseFloat(formData.area_sqft),
         booking_advance: parseFloat(formData.booking_advance),
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
-        is_active: true
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+        is_active: true,
       };
 
-      if (formData.scheme_type === 'single_payment') {
+      if (formData.scheme_type === "single_payment") {
         if (!formData.balance_payment_days) {
           toast({
             title: "Error",
-            description: "Balance payment days is required for single payment scheme",
+            description:
+              "Balance payment days is required for single payment scheme",
             variant: "destructive",
           });
           setLoading(false);
           return;
         }
-        schemeData.balance_payment_days = parseInt(formData.balance_payment_days);
+        schemeData.balance_payment_days = parseInt(
+          formData.balance_payment_days
+        );
       } else {
-        if (!formData.total_installments || !formData.monthly_installment_amount) {
+        if (
+          !formData.total_installments ||
+          !formData.monthly_installment_amount
+        ) {
           toast({
             title: "Error",
-            description: "Installment details are required for installment scheme",
+            description:
+              "Installment details are required for installment scheme",
             variant: "destructive",
           });
           setLoading(false);
           return;
         }
         schemeData.total_installments = parseInt(formData.total_installments);
-        schemeData.monthly_installment_amount = parseFloat(formData.monthly_installment_amount);
+        schemeData.monthly_installment_amount = parseFloat(
+          formData.monthly_installment_amount
+        );
       }
 
       if (isCommercial && formData.rental_start_month) {
@@ -121,35 +143,35 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
       }
 
       await addScheme(schemeData);
-      
+
       // Reset form
       setFormData({
-        scheme_name: '',
-        scheme_type: 'single_payment',
-        area_sqft: '',
-        booking_advance: '',
-        balance_payment_days: '',
-        total_installments: '',
-        monthly_installment_amount: '',
-        rental_start_month: ''
+        scheme_name: "",
+        scheme_type: "single_payment",
+        area_sqft: "",
+        booking_advance: "",
+        balance_payment_days: "",
+        total_installments: "",
+        monthly_installment_amount: "",
+        rental_start_month: "",
       });
       setStartDate(undefined);
       setEndDate(undefined);
-      
+
       // Show success message
       toast({
         title: "Success",
         description: "Investment scheme created successfully",
       });
-      
+
       // Call both callbacks if provided
       onSchemeAdded?.();
       onSuccess?.();
-      
+
       // Close dialog
       onOpenChange(false);
     } catch (error: any) {
-      console.error('Error adding scheme:', error);
+      console.error("Error adding scheme:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create investment scheme",
@@ -165,14 +187,14 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
     if (!newOpen) {
       // Reset form when closing
       setFormData({
-        scheme_name: '',
-        scheme_type: 'single_payment',
-        area_sqft: '',
-        booking_advance: '',
-        balance_payment_days: '',
-        total_installments: '',
-        monthly_installment_amount: '',
-        rental_start_month: ''
+        scheme_name: "",
+        scheme_type: "single_payment",
+        area_sqft: "",
+        booking_advance: "",
+        balance_payment_days: "",
+        total_installments: "",
+        monthly_installment_amount: "",
+        rental_start_month: "",
       });
       setStartDate(undefined);
       setEndDate(undefined);
@@ -195,7 +217,9 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
               <Input
                 id="scheme_name"
                 value={formData.scheme_name}
-                onChange={(e) => handleInputChange('scheme_name', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("scheme_name", e.target.value)
+                }
                 placeholder="Enter scheme name"
                 required
               />
@@ -207,7 +231,7 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
                 id="area_sqft"
                 type="number"
                 value={formData.area_sqft}
-                onChange={(e) => handleInputChange('area_sqft', e.target.value)}
+                onChange={(e) => handleInputChange("area_sqft", e.target.value)}
                 placeholder="Enter area in square feet"
                 min="0"
                 step="0.01"
@@ -222,7 +246,9 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
               id="booking_advance"
               type="number"
               value={formData.booking_advance}
-              onChange={(e) => handleInputChange('booking_advance', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("booking_advance", e.target.value)
+              }
               placeholder="Enter booking advance amount"
               min="0"
               step="0.01"
@@ -235,31 +261,39 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
             <Label>Scheme Type *</Label>
             <RadioGroup
               value={formData.scheme_type}
-              onValueChange={(value: InvestmentScheme['scheme_type']) => 
-                handleInputChange('scheme_type', value)
+              onValueChange={(value: InvestmentScheme["scheme_type"]) =>
+                handleInputChange("scheme_type", value)
               }
               className="flex space-x-4"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="single_payment" id="single_payment" />
-                <Label htmlFor="single_payment" className="cursor-pointer">Single Payment</Label>
+                <Label htmlFor="single_payment" className="cursor-pointer">
+                  Single Payment
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="installment" id="installment" />
-                <Label htmlFor="installment" className="cursor-pointer">Installment</Label>
+                <Label htmlFor="installment" className="cursor-pointer">
+                  Installment
+                </Label>
               </div>
             </RadioGroup>
           </div>
 
           {/* Conditional Fields */}
-          {formData.scheme_type === 'single_payment' && (
+          {formData.scheme_type === "single_payment" && (
             <div className="space-y-2">
-              <Label htmlFor="balance_payment_days">Balance Payment Days *</Label>
+              <Label htmlFor="balance_payment_days">
+                Balance Payment Days *
+              </Label>
               <Input
                 id="balance_payment_days"
                 type="number"
                 value={formData.balance_payment_days}
-                onChange={(e) => handleInputChange('balance_payment_days', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("balance_payment_days", e.target.value)
+                }
                 placeholder="Enter number of days for balance payment"
                 min="0"
                 required
@@ -267,7 +301,7 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
             </div>
           )}
 
-          {formData.scheme_type === 'installment' && (
+          {formData.scheme_type === "installment" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="total_installments">Total Installments *</Label>
@@ -275,7 +309,9 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
                   id="total_installments"
                   type="number"
                   value={formData.total_installments}
-                  onChange={(e) => handleInputChange('total_installments', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("total_installments", e.target.value)
+                  }
                   placeholder="Enter total installments"
                   min="0"
                   required
@@ -283,12 +319,19 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="monthly_installment_amount">Monthly Installment Amount *</Label>
+                <Label htmlFor="monthly_installment_amount">
+                  Monthly Installment Amount *
+                </Label>
                 <Input
                   id="monthly_installment_amount"
                   type="number"
                   value={formData.monthly_installment_amount}
-                  onChange={(e) => handleInputChange('monthly_installment_amount', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "monthly_installment_amount",
+                      e.target.value
+                    )
+                  }
                   placeholder="Enter monthly amount"
                   min="0"
                   step="0.01"
@@ -298,19 +341,38 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
             </div>
           )}
 
-          {/* Commercial-specific field */}
           {isCommercial && (
             <div className="space-y-2">
               <Label htmlFor="rental_start_month">Rental Start Month</Label>
-              <Input
-                id="rental_start_month"
-                type="number"
-                value={formData.rental_start_month}
-                onChange={(e) => handleInputChange('rental_start_month', e.target.value)}
-                placeholder="Enter month number (1-12)"
-                min="1"
-                max="12"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-left"
+                  >
+                    {formData.rental_start_month
+                      ? `${formData.rental_start_month} months`
+                      : "Select month"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full max-w-xs p-0">
+                  <div className="flex flex-col">
+                    {["37", "61", "85"].map((month) => (
+                      <button
+                        key={month}
+                        type="button"
+                        className="px-4 py-2 text-left hover:bg-muted"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent popover/dialog close
+                          handleInputChange("rental_start_month", month);
+                        }}
+                      >
+                        {month} months
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 
@@ -328,7 +390,11 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "PPP") : <span>Pick start date</span>}
+                    {startDate ? (
+                      format(startDate, "PPP")
+                    ) : (
+                      <span>Pick start date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -355,7 +421,11 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "PPP") : <span>Pick end date</span>}
+                    {endDate ? (
+                      format(endDate, "PPP")
+                    ) : (
+                      <span>Pick end date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -383,7 +453,7 @@ const AddSchemeDialog: React.FC<AddSchemeDialogProps> = ({
             </Button>
             <Button type="submit" disabled={loading}>
               <Save className="h-4 w-4 mr-2" />
-              {loading ? 'Creating...' : 'Create Scheme'}
+              {loading ? "Creating..." : "Create Scheme"}
             </Button>
           </div>
         </form>

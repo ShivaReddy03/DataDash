@@ -63,6 +63,7 @@ export interface Amenity {
 export interface ProjectOption {
   id: string;
   title: string;
+  property_type: PropertyType;
 }
 
 export interface Project {

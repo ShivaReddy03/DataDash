@@ -131,7 +131,9 @@ const EditSchemeDialog: React.FC<EditSchemeDialogProps> = ({
       // Only include scheme-specific fields based on current scheme type
       if (scheme.scheme_type === "single_payment") {
         if (formData.balance_payment_days) {
-          updateData.balance_payment_days = parseInt(formData.balance_payment_days);
+          updateData.balance_payment_days = parseInt(
+            formData.balance_payment_days
+          );
         }
         // Clear installment fields if they exist
         updateData.total_installments = undefined;
@@ -141,7 +143,9 @@ const EditSchemeDialog: React.FC<EditSchemeDialogProps> = ({
           updateData.total_installments = parseInt(formData.total_installments);
         }
         if (formData.monthly_installment_amount) {
-          updateData.monthly_installment_amount = parseFloat(formData.monthly_installment_amount);
+          updateData.monthly_installment_amount = parseFloat(
+            formData.monthly_installment_amount
+          );
         }
         // Clear single payment field if it exists
         updateData.balance_payment_days = undefined;
@@ -212,7 +216,9 @@ const EditSchemeDialog: React.FC<EditSchemeDialogProps> = ({
           <div className="flex items-center space-x-2">
             <Label className="text-sm font-medium">Scheme Type:</Label>
             <span className="text-sm capitalize">
-              {scheme.scheme_type === "single_payment" ? "Single Payment" : "Installment"}
+              {scheme.scheme_type === "single_payment"
+                ? "Single Payment"
+                : "Installment"}
             </span>
             <span className="text-xs text-muted-foreground">
               (Cannot be changed)
@@ -269,9 +275,7 @@ const EditSchemeDialog: React.FC<EditSchemeDialogProps> = ({
           {/* Conditional Fields based on current scheme type */}
           {scheme.scheme_type === "single_payment" && (
             <div className="space-y-2">
-              <Label htmlFor="balance_payment_days">
-                Balance Payment Days
-              </Label>
+              <Label htmlFor="balance_payment_days">Balance Payment Days</Label>
               <Input
                 id="balance_payment_days"
                 type="number"
@@ -327,17 +331,35 @@ const EditSchemeDialog: React.FC<EditSchemeDialogProps> = ({
           {isCommercial && (
             <div className="space-y-2">
               <Label htmlFor="rental_start_month">Rental Start Month</Label>
-              <Input
-                id="rental_start_month"
-                type="number"
-                value={formData.rental_start_month}
-                onChange={(e) =>
-                  handleInputChange("rental_start_month", e.target.value)
-                }
-                placeholder="Enter month number (1-12)"
-                min="1"
-                max="12"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-left"
+                  >
+                    {formData.rental_start_month
+                      ? `${formData.rental_start_month} months`
+                      : "Select month"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full max-w-xs p-0">
+                  <div className="flex flex-col">
+                    {["37", "61", "85"].map((month) => (
+                      <button
+                        key={month}
+                        type="button"
+                        className="px-4 py-2 text-left hover:bg-muted"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent popover/dialog close
+                          handleInputChange("rental_start_month", month);
+                        }}
+                      >
+                        {month} months
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 
